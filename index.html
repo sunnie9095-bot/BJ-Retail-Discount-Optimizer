@@ -2,292 +2,385 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>現場商品快速查詢系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>門市最佳折扣計算機</title>
+    <!-- 引入 Tailwind CSS 打造精美 UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts (Inter & 繁體中文) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
         body {
-            background-color: #f8f9fa;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
-        .container {
-            width: 100%;
-            max-width: 500px;
-            background: #fff;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        /* 隱藏滾動條但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-        h2 {
-            margin-top: 0;
-            color: #2c3e50;
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .search-box {
-            position: relative;
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 16px; /* 防止 iOS 自動放大 */
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input[type="text"]:focus {
-            border-color: #3182ce;
-        }
-        .status {
-            font-size: 13px;
-            color: #718096;
-            text-align: right;
-            margin-top: -15px;
-            margin-bottom: 15px;
-        }
-        .result-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .result-item {
-            padding: 14px 16px;
-            border-bottom: 1px solid #edf2f7;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .result-item:last-child {
-            border-bottom: none;
-        }
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .keyword-tag {
-            font-size: 12px;
-            background: #ebf8ff;
-            color: #2b6cb0;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .product-code {
-            font-family: monospace;
-            font-size: 16px;
-            font-weight: 700;
-            color: #1a202c;
-            background: #f7fafc;
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid #e2e8f0;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            user-select: none;
-            position: relative;
-        }
-        .product-code:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-        }
-        .product-code:active {
-            transform: scale(0.95);
-        }
-        .item-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 12px;
-            margin-top: 2px;
-        }
-        .product-name {
-            font-size: 14px;
-            color: #4a5568;
-            line-height: 1.4;
-            flex: 1;
-        }
-        /* 價格標籤樣式 */
-        .product-price {
-            font-size: 15px;
-            font-weight: 700;
-            color: #e53e3e; /* 醒目的紅色 */
-            white-space: nowrap;
-        }
-        .empty-state {
-            text-align: center;
-            color: #a0aec0;
-            padding: 30px 0;
-        }
-        
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            background: rgba(0, 0, 0, 0.75);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            pointer-events: none;
-            z-index: 999;
-        }
-        .toast.show {
-            opacity: 1;
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
 
-<div class="container">
-    <h2>商品代號快速查詢</h2>
-    
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="輸入快速搜尋代號..." autocomplete="off">
-    </div>
-    <div id="status" class="status">查詢中</div>
+    <!-- 頂部導覽列 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 md:py-4 shadow-sm">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">👟</span>
+                <div>
+                    <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">門市最佳折扣計算機</h1>
+                    <p class="text-xs text-slate-500 font-medium mt-0.5">iPad / 智慧手機專用現場結帳神器</p>
+                </div>
+            </div>
+            <!-- 折扣級距快速預覽 -->
+            <div class="flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap">滿 1588 折 100</span>
+                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 whitespace-nowrap">滿 2488 折 188</span>
+                <span class="px-2.5 py-1 text-xs font-bold rounded-full bg-purple-50 text-purple-700 border border-purple-200 whitespace-nowrap">滿 4888 折 388</span>
+            </div>
+        </div>
+    </header>
 
-    <ul id="resultList" class="result-list">
-        <!-- 搜尋結果會顯示在這裡 -->
-    </ul>
-</div>
-
-<div id="toast" class="toast">已複製到剪貼簿</div>
-
-<script>
-    let searchMap = new Map();
-
-    async function loadData() {
-        const statusEl = document.getElementById('status');
-        try {
-            const response = await fetch(`data.csv?t=${new Date().getTime()}`);
-            if (!response.ok) throw new Error('找不到資料檔 data.csv');
-            
-            const text = await response.text();
-            parseCSV(text);
-            
-            statusEl.textContent = '系統就緒，可立即查詢';
-        } catch (error) {
-            statusEl.textContent = '資料載入失敗，請檢查 data.csv 是否上傳';
-            statusEl.style.color = '#e53e3e';
-            console.error(error);
-        }
-    }
-
-    // 解析 CSV 邏輯 (支援 A, B, C 與 Q 欄位)
-    function parseCSV(text) {
-        const lines = text.split(/\r?\n/);
+    <!-- 主要內容區 -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
         
-        // 略過第一行標題，從第二行開始讀取
-        for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
+        <!-- 左側：輸入區域 (占 5 格) -->
+        <section class="md:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-5">
+            <h2 class="text-md font-bold text-slate-900 flex items-center gap-2">
+                <span class="w-1.5 h-5 bg-indigo-600 rounded-full"></span>
+                步驟 1：輸入鞋子價格
+            </h2>
 
-            const columns = line.split(',');
-            if (columns.length >= 2) {
-                const keyword = columns[0].trim().toLowerCase(); // A 欄：快速碼
-                const productCode = columns[1].trim();          // B 欄：商品代號
-                const productName = columns[2] ? columns[2].trim() : ''; // C 欄：商品全名
-                
-                // Q 欄位在 CSV 索引中是第 16（因為從 0 開始數：A=0, B=1, C=2 ... Q=16）
-                let price = columns[16] ? columns[16].trim() : '';
-                
-                // 如果價格有數值，加上千分位標點或 $ 記號（若已有字串則直接顯示）
-                if (price && !isNaN(price.replace(/,/g, ''))) {
-                    price = '$' + Number(price.replace(/,/g, '')).toLocaleString();
-                } else if (price && !price.startsWith('$')) {
-                    price = '$' + price;
-                }
+            <!-- 金額輸入框與按鈕 -->
+            <div class="space-y-3">
+                <label for="priceInput" class="block text-sm font-semibold text-slate-600">請輸入鞋子金額：</label>
+                <div class="flex gap-2">
+                    <div class="relative flex-grow">
+                        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                        <input type="number" id="priceInput" placeholder="例如：2499" 
+                               class="w-full pl-8 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 text-lg font-bold transition-all"
+                               pattern="[0-9]*" inputmode="numeric">
+                    </div>
+                    <button id="addBtn" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold px-6 rounded-xl transition-all shadow-md shadow-indigo-100 flex items-center justify-center text-lg">
+                        ＋
+                    </button>
+                </div>
+            </div>
 
-                if (keyword && productCode) {
-                    if (!searchMap.has(keyword)) {
-                        searchMap.set(keyword, []);
-                    }
-                    searchMap.get(keyword).push({
-                        code: productCode,
-                        name: productName,
-                        price: price
-                    });
+            <!-- 門市常用熱銷價格快速鍵 -->
+            <div>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">門市常見價格快捷鍵：</p>
+                <div class="flex flex-wrap gap-2">
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1380">$1380</button>
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1480">$1480</button>
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1580">$1580</button>
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1680">$1680</button>
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1780">$1780</button>
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1880">$1880</button>
+                    <button class="preset-btn px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg text-slate-600 transition-all border border-transparent hover:border-indigo-200" data-val="1980">$1980</button>
+                </div>
+            </div>
+
+            <!-- 錯誤提示條 -->
+            <div id="errorBanner" class="hidden bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+                <span>⚠️</span> <span id="errorMsg"></span>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 已加入的鞋子清單 -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-bold text-slate-600">購物車清單 (<span id="itemCount">0</span> 雙)</span>
+                    <button id="clearAllBtn" class="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 active:scale-95 transition-all">
+                        <span>🧹</span> 清空重設
+                    </button>
+                </div>
+                <div id="shoeList" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <!-- 這裡會動態產生清單 -->
+                    <div id="emptyTip" class="text-center py-8 text-slate-400 text-sm">
+                        <span class="text-3xl block mb-2">🛒</span>
+                        尚未加入鞋子價格
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右側：計算結果 (占 7 格) -->
+        <section class="md:col-span-7 space-y-6">
+            
+            <!-- 三個大數據儀表板 -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 text-center shadow-sm">
+                    <p class="text-xs font-semibold text-slate-400 mb-1">原始總額</p>
+                    <p id="statOriginal" class="text-lg md:text-xl font-extrabold text-slate-700">$0</p>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 text-center shadow-sm">
+                    <p class="text-xs font-semibold text-emerald-600 mb-1">省下折扣</p>
+                    <p id="statDiscount" class="text-xl md:text-2xl font-black text-emerald-700">$0</p>
+                </div>
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 text-center shadow-sm">
+                    <p class="text-xs font-semibold text-indigo-600 mb-1">最佳實付</p>
+                    <p id="statFinal" class="text-xl md:text-2xl font-black text-indigo-700">$0</p>
+                </div>
+            </div>
+
+            <!-- 最佳拆單建議方案卡片 -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <h2 class="text-md font-bold text-slate-900 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-emerald-500 rounded-full"></span>
+                    步驟 2：最佳結帳方案建議
+                </h2>
+
+                <div id="solutionBox" class="space-y-4">
+                    <div class="text-center py-12 text-slate-400 text-sm">
+                        <span class="text-3xl block mb-2">💡</span>
+                        請先在左側輸入鞋子價格，系統將自動算出最划算的拆單方式
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-slate-900 text-slate-400 text-xs text-center py-4 mt-8 border-t border-slate-800">
+        <p>© 2026 門市折扣最佳化系統 by工程師之桑 </p>
+    </footer>
+
+    <script>
+        // --- 狀態管理 ---
+        let shoePrices = []; // 預設先給這兩雙
+        const TIERS = [
+            { min: 4888, off: 388, label: "滿 4888 折 388" },
+            { min: 2488, off: 188, label: "滿 2488 折 188" },
+            { min: 1588, off: 100, label: "滿 1588 折 100" }
+        ];
+
+        // --- DOM 元素獲取 ---
+        const priceInput = document.getElementById('priceInput');
+        const addBtn = document.getElementById('addBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const shoeList = document.getElementById('shoeList');
+        const emptyTip = document.getElementById('emptyTip');
+        const itemCount = document.getElementById('itemCount');
+        const errorBanner = document.getElementById('errorBanner');
+        const errorMsg = document.getElementById('errorMsg');
+
+        const statOriginal = document.getElementById('statOriginal');
+        const statDiscount = document.getElementById('statDiscount');
+        const statFinal = document.getElementById('statFinal');
+        const solutionBox = document.getElementById('solutionBox');
+
+        // --- 核心折價演算法 (Set Partitioning 最佳拆單解) ---
+        function getBestDiscount(prices) {
+            const n = prices.length;
+            if (n === 0) return { discount: 0, partitions: [] };
+
+            function calculateSingleOrderDiscount(total) {
+                for (const t of TIERS) {
+                    if (total >= t.min) return t.off;
                 }
+                return 0;
             }
+
+            // 防呆機制：如果輸入鞋子太多 (大於 10 雙)，為避免遞迴過深導致瀏覽器卡死，改採貪婪或合單計算
+            if (n > 10) {
+                const total = prices.reduce((a, b) => a + b, 0);
+                return {
+                    discount: calculateSingleOrderDiscount(total),
+                    partitions: [prices],
+                    isFallback: true
+                };
+            }
+
+            let bestTotalDiscount = 0;
+            let bestPartition = [];
+
+            // 遞迴生成所有可能的分組拆單 (Set Partition)
+            function partitionPrices(index, currentPartitions) {
+                if (index === n) {
+                    let currentDiscount = 0;
+                    for (const part of currentPartitions) {
+                        const partSum = part.reduce((a, b) => a + b, 0);
+                        currentDiscount += calculateSingleOrderDiscount(partSum);
+                    }
+                    if (currentDiscount > bestTotalDiscount) {
+                        bestTotalDiscount = currentDiscount;
+                        bestPartition = currentPartitions.map(p => [...p]);
+                    }
+                    return;
+                }
+
+                // 情況 A：把當前鞋子塞到現有的每一個籃子 (拆單) 裡
+                for (let i = 0; i < currentPartitions.length; i++) {
+                    currentPartitions[i].push(prices[index]);
+                    partitionPrices(index + 1, currentPartitions);
+                    currentPartitions[i].pop();
+                }
+
+                // 情況 B：幫當前鞋子開一個獨立的新籃子 (新開一單)
+                currentPartitions.push([prices[index]]);
+                partitionPrices(index + 1, currentPartitions);
+                currentPartitions.pop();
+            }
+
+            partitionPrices(0, []);
+            return { discount: bestTotalDiscount, partitions: bestPartition };
         }
-    }
 
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast(`已複製：${text}`);
-        }).catch(err => {
-            console.error('複製失敗', err);
-        });
-    }
+        // --- 畫面渲染與更新 ---
+        function updateUI() {
+            // 1. 更新購物車列表
+            shoeList.innerHTML = '';
+            itemCount.textContent = shoePrices.length;
 
-    let toastTimeout;
-    function showToast(message) {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.classList.add('show');
-        
-        clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => {
-            toast.classList.remove('show');
-        }, 1500);
-    }
-
-    function doSearch() {
-        const query = document.getElementById('searchInput').value.trim().toLowerCase();
-        const resultList = document.getElementById('resultList');
-        resultList.innerHTML = ''; 
-
-        if (!query) {
-            return; 
-        }
-
-        let hasResults = false;
-
-        for (let [keyword, items] of searchMap.entries()) {
-            if (keyword.includes(query)) {
-                hasResults = true;
-                
-                items.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'result-item';
-                    
-                    li.innerHTML = `
-                        <div class="item-header">
-                            <span class="keyword-tag">${keyword.toUpperCase()}</span>
-                            <span class="product-code" onclick="copyToClipboard('${item.code}')" title="點擊複製">${item.code}</span>
+            if (shoePrices.length === 0) {
+                shoeList.appendChild(emptyTip);
+                emptyTip.classList.remove('hidden');
+            } else {
+                emptyTip.classList.add('hidden');
+                shoePrices.forEach((price, idx) => {
+                    const row = document.createElement('div');
+                    row.className = "flex justify-between items-center bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl animate-fade-in";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-400 bg-slate-200/60 w-5 h-5 rounded-full flex items-center justify-center">${idx + 1}</span>
+                            <span class="font-extrabold text-slate-800 text-lg">$${price.toLocaleString()}</span>
                         </div>
-                        <div class="item-footer">
-                            <div class="product-name">${item.name || '(未提供品名)'}</div>
-                            ${item.price ? `<div class="product-price">${item.price}</div>` : ''}
-                        </div>
+                        <button class="text-rose-500 hover:text-rose-700 active:scale-90 p-1 font-bold text-xl transition-all" onclick="deleteShoe(${idx})">
+                            ×
+                        </button>
                     `;
-                    resultList.appendChild(li);
+                    shoeList.appendChild(row);
                 });
             }
+
+            // 2. 進行核心折扣計算
+            const { discount, partitions, isFallback } = getBestDiscount(shoePrices);
+            const originalSum = shoePrices.reduce((a, b) => a + b, 0);
+            const finalPay = originalSum - discount;
+
+            // 3. 更新數據看板
+            statOriginal.textContent = `$${originalSum.toLocaleString()}`;
+            statDiscount.textContent = `$${discount.toLocaleString()}`;
+            statFinal.textContent = `$${finalPay.toLocaleString()}`;
+
+            // 4. 更新詳細拆單建議卡片
+            solutionBox.innerHTML = '';
+
+            if (shoePrices.length === 0) {
+                solutionBox.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 text-sm">
+                        <span class="text-3xl block mb-2">💡</span>
+                        請先在左側輸入鞋子價格，系統將自動算出最劃算的拆單方式
+                    </div>`;
+                return;
+            }
+
+            if (isFallback) {
+                solutionBox.innerHTML += `
+                    <div class="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl font-medium">
+                        ⚠️ 提示：由於鞋子數量過多（大於 10 雙），為保障瀏覽器效能，已直接採單一訂單合併計算。
+                    </div>
+                `;
+            }
+
+            // 渲染每一個拆開的結帳單
+            partitions.forEach((part, index) => {
+                const partSum = part.reduce((a, b) => a + b, 0);
+                let disc = 0;
+                let matchedLabel = "未滿 $1,588 門檻";
+
+                for (const t of TIERS) {
+                    if (partSum >= t.min) {
+                        disc = t.off;
+                        matchedLabel = t.label;
+                        break;
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-xl border ${disc > 0 ? 'bg-emerald-50/50 border-emerald-100' : 'bg-slate-50 border-slate-200'} space-y-3`;
+                
+                let shoesHtml = part.map(p => `<span class="bg-white border border-slate-200 px-3 py-1 rounded-lg text-sm font-bold text-slate-700 shadow-sm">$${p.toLocaleString()}</span>`).join('<span class="text-slate-400 font-bold">+</span>');
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b ${disc > 0 ? 'border-emerald-100/60' : 'border-slate-200'} pb-2">
+                        <span class="text-sm font-bold ${disc > 0 ? 'text-emerald-800' : 'text-slate-700'}">【第 ${index + 1} 單】結帳金額: $${partSum.toLocaleString()}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-bold ${disc > 0 ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}">${matchedLabel}</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5 py-1">
+                        ${shoesHtml}
+                    </div>
+                    <div class="flex justify-between items-center text-xs font-semibold pt-1">
+                        <span class="text-slate-500">此單省下：-$${disc.toLocaleString()}</span>
+                        <span class="${disc > 0 ? 'text-emerald-700 font-extrabold text-sm' : 'text-slate-600'}">此單實付：$${(partSum - disc).toLocaleString()}</span>
+                    </div>
+                `;
+                solutionBox.appendChild(card);
+            });
         }
 
-        if (!hasResults) {
-            resultList.innerHTML = '<li class="empty-state">找不到符合的商品</li>';
+        // --- 互動事件處理 ---
+        function addShoe(price) {
+            if (isNaN(price) || price <= 0) {
+                showError("請輸入正確的鞋子金額！");
+                return;
+            }
+            hideError();
+            shoePrices.push(price);
+            updateUI();
+            priceInput.value = '';
+            priceInput.focus();
         }
-    }
 
-    document.getElementById('searchInput').addEventListener('input', doSearch);
-    window.addEventListener('DOMContentLoaded', loadData);
-</script>
+        function deleteShoe(idx) {
+            shoePrices.splice(idx, 1);
+            updateUI();
+        }
 
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorBanner.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorBanner.classList.add('hidden');
+        }
+
+        // 綁定「新增」按鈕
+        addBtn.addEventListener('click', () => {
+            const val = parseFloat(priceInput.value);
+            addShoe(val);
+        });
+
+        // 綁定鍵盤 Enter 鍵
+        priceInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const val = parseFloat(priceInput.value);
+                addShoe(val);
+            }
+        });
+
+        // 快捷鍵點擊
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = parseFloat(btn.dataset.val);
+                addShoe(val);
+            });
+        });
+
+        // 清空重設
+        clearAllBtn.addEventListener('click', () => {
+            shoePrices = [];
+            updateUI();
+        });
+
+        // 頁面初次載入
+        updateUI();
+    </script>
 </body>
 </html>
